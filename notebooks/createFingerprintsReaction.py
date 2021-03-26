@@ -36,6 +36,9 @@ def create_transformation_FP(rxn, fptype):
             rfp = fp
         else:
             rfp += fp
+#     print(rfp)
+        
+        
     pfp = None
     for product in range(rxn.GetNumProductTemplates()):
         mol = rxn.GetProductTemplate(product)
