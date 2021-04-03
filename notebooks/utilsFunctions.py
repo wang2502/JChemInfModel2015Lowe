@@ -16,6 +16,7 @@ from collections import defaultdict
 def fpToNP(fp,fpsz):
     nfp = np.zeros((fpsz,),np.int32)
     for idx,v in fp.GetNonzeroElements().items():
+#         print(idx,v)
         nidx = hash(str(idx))%fpsz
         nfp[nidx]+=v
     return nfp
@@ -195,16 +196,22 @@ def evaluateModel(model, testFPs, testReactionTypes, rTypes, names_rTypes):
 def evaluateKMeansClustering(clusters_per_rType, testFPs, rTypes, names_rTypes):
     newPreds=[]
     newTestActs=[]
+    # each class in the data
     for cls in testFPs:
+        # each element in the class
         for fp in testFPs[cls]:
             min_dist = 10000
             pred_cls = ""
+            # Training model in each class
             for cls_train in clusters_per_rType:
-                dist = clusters_per_rType[cls_train].transform(fp).min()
+                dist = clusters_per_rType[cls_train].transform([fp]).min()
+                # it is smallest distance, then store the class
                 if min_dist > dist:
                     min_dist = dist
                     pred_cls = cls_train
+            # predicted label
             newPreds.append(pred_cls)
+            # actual label
             newTestActs.append(cls)
 
     cmat=metrics.confusion_matrix(newTestActs,newPreds)
@@ -245,11 +252,16 @@ def evaluatePurityClusters(purities, members_per_cls, level):
     for i in purities:
         label=i[3][level]
         if label in res_dict:
+            # how many clusters that have same reaction type
             nofCluster = res_dict[label][0]+1
+            # what is the mean ratio of most reaction type in all cluster
             mean_purity = (res_dict[label][1]*(nofCluster-1)+i[2][level])/nofCluster
+            # in the cluster, how many total reactions are found
             clustersize = res_dict[label][2]+i[1]
+            # in the cluster, how many largest type reactions are found
             nof_members_cls = res_dict[label][3] + i[4][level]
-            ratio_members_found = nof_members_cls/float(members_per_cls[label])
+            # out of total reactions in certain reaction type, how many were found
+            ratio_members_found = nof_members_cls/float(members_per_cls[label]) 
             f_score=2*(mean_purity*ratio_members_found)/(mean_purity+ratio_members_found)
             res_dict[label] = [nofCluster, mean_purity, clustersize, nof_members_cls, ratio_members_found, f_score]
         else:
